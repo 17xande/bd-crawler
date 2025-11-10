@@ -1,8 +1,28 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
-	_, _ = normalizeURL("test")
+	args := os.Args[1:]
+	if len(args) < 1 {
+		fmt.Println("no website provided")
+		os.Exit(1)
+	}
+
+	if len(args) > 1 {
+		fmt.Println("too many arguments provided")
+		os.Exit(1)
+	}
+
+	baseURL := args[0]
+	fmt.Printf("starting crawl of: %s\n", baseURL)
+	res, err := getHTML(baseURL)
+	if err != nil {
+		fmt.Printf("error getting html: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println(res)
 }
