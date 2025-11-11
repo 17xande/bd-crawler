@@ -19,10 +19,17 @@ func main() {
 
 	baseURL := args[0]
 	fmt.Printf("starting crawl of: %s\n", baseURL)
-	res, err := getHTML(baseURL)
-	if err != nil {
-		fmt.Printf("error getting html: %v\n", err)
-		os.Exit(1)
+
+	pages := make(map[string]int)
+	crawlPage(baseURL, baseURL, pages)
+
+	fmt.Println("\nPage: Count\n------------")
+	for key, val := range pages {
+		fmt.Printf("%s:\t%d\n", key, val)
 	}
-	fmt.Println(res)
+	// if err != nil {
+	// 	fmt.Printf("error getting html: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println(res)
 }
