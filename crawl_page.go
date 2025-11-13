@@ -47,8 +47,8 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 	for _, url := range URLs {
 		cfg.wg.Add(1)
 		defer func() {
-			cfg.wg.Done()
 			<-cfg.concurrencyControl
+			cfg.wg.Done()
 		}()
 
 		go cfg.crawlPage(url)

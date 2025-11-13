@@ -35,9 +35,7 @@ func main() {
 	}
 
 	fmt.Printf("starting crawl of: %s\n", baseURL)
-	cfg.wg.Add(1)
-	go cfg.crawlPage(baseURL)
-	cfg.wg.Done()
+	cfg.crawlPage(baseURL)
 	cfg.wg.Wait()
 
 	fmt.Println("\nPage: Count\n------------")
