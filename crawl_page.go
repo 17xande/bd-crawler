@@ -5,18 +5,13 @@ import (
 	"net/url"
 )
 
-func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
-	baseURL, err := url.Parse(rawBaseURL)
-	if err != nil {
-		panic(err)
-	}
-
+func (cfg *config) crawlPage(rawCurrentURL string) {
 	currentURL, err := url.Parse(rawCurrentURL)
 	if err != nil {
 		panic(err)
 	}
 
-	if baseURL.Hostname() != currentURL.Hostname() {
+	if cfg.baseURL.Hostname() != currentURL.Hostname() {
 		return
 	}
 
@@ -24,12 +19,11 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 	if err != nil {
 		panic(err)
 	}
-	if _, ok := pages[normalized]; ok {
-		pages[normalized]++
+
+	fmt.Printf("adding page visit for %s\n", normalized)
+	if isFirst := cfg.addPageVisit(normalized); !isFirst {
 		return
 	}
-
-	pages[normalized] = 1
 
 	fmt.Printf("crawling %s\n", rawCurrentURL)
 	html, err := getHTML(rawCurrentURL)
@@ -38,13 +32,30 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 		return
 	}
 
-	URLs, err := getURLsFromHTML(html, baseURL)
+	page := cfg.pages[normalized]
+
+	URLs, err := getURLsFromHTML(html, currentURL)
 	if err != nil {
 		fmt.Printf("error getting URLs from html: %v\n", err)
 		return
 	}
+	page.OutgoingLinks = URLs
+	cfg.pages[normalized] = page
 
 	for _, url := range URLs {
-		crawlPage(rawBaseURL, url, pages)
+		cfg.crawlPage(url)
 	}
+}
+
+func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
+	_, found := cfg.pages[normalizedURL]
+	isFirst = !found
+	if found {
+		return
+	}
+	page := PageData{
+		URL: normalizedURL,
+	}
+	cfg.pages[normalizedURL] = page
+	return
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 )
 
@@ -18,18 +19,23 @@ func main() {
 	}
 
 	baseURL := args[0]
-	fmt.Printf("starting crawl of: %s\n", baseURL)
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Printf("error parsing url: %v", err)
+		os.Exit(1)
+	}
 
-	pages := make(map[string]int)
-	crawlPage(baseURL, baseURL, pages)
+	cfg := config{
+		pages:              make(map[string]PageData),
+		baseURL:            parsedURL,
+		concurrencyControl: make(chan struct{}),
+	}
+
+	fmt.Printf("starting crawl of: %s\n", baseURL)
+	cfg.crawlPage(baseURL)
 
 	fmt.Println("\nPage: Count\n------------")
-	for key, val := range pages {
-		fmt.Printf("%s:\t%d\n", key, val)
+	for key, val := range cfg.pages {
+		fmt.Printf("%s:\t%v\n", key, val)
 	}
-	// if err != nil {
-	// 	fmt.Printf("error getting html: %v\n", err)
-	// 	os.Exit(1)
-	// }
-	// fmt.Println(res)
 }
