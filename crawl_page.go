@@ -6,6 +6,7 @@ import (
 )
 
 func (cfg *config) crawlPage(rawCurrentURL string) {
+	cfg.concurrencyControl <- struct{}{}
 	currentURL, err := url.Parse(rawCurrentURL)
 	if err != nil {
 		panic(err)
@@ -20,7 +21,6 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		panic(err)
 	}
 
-	fmt.Printf("adding page visit for %s\n", normalized)
 	if isFirst := cfg.addPageVisit(normalized); !isFirst {
 		return
 	}
@@ -31,6 +31,7 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 		fmt.Printf("error getting html: %v\n", err)
 		return
 	}
+	cfg.mu.Lock()
 
 	page := cfg.pages[normalized]
 
@@ -41,13 +42,22 @@ func (cfg *config) crawlPage(rawCurrentURL string) {
 	}
 	page.OutgoingLinks = URLs
 	cfg.pages[normalized] = page
+	cfg.mu.Unlock()
 
 	for _, url := range URLs {
-		cfg.crawlPage(url)
+		cfg.wg.Add(1)
+		defer func() {
+			cfg.wg.Done()
+			<-cfg.concurrencyControl
+		}()
+
+		go cfg.crawlPage(url)
 	}
 }
 
 func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
 	_, found := cfg.pages[normalizedURL]
 	isFirst = !found
 	if found {
